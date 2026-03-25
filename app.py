@@ -10,18 +10,11 @@ from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 
 
-# =========================
-# Load API key
-# =========================
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
-
-# =========================
-# Load embeddings + FAISS
-# =========================
+# 🔥 lightweight embedding
 embeddings = HuggingFaceEmbeddings(
-    model_name="BAAI/bge-small-en-v1.5",
-    encode_kwargs={"normalize_embeddings": True}
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
 
 db = FAISS.load_local(
@@ -30,34 +23,16 @@ db = FAISS.load_local(
     allow_dangerous_deserialization=True
 )
 
-retriever = db.as_retriever(
-    search_type="mmr",
-    search_kwargs={"k": 5, "fetch_k": 20, "lambda_mult": 0.7}
-)
+retriever = db.as_retriever(search_kwargs={"k": 3})
 
-
-# =========================
-# LLM
-# =========================
+# 🔥 faster LLM
 llm = ChatGroq(
     groq_api_key=GROQ_API_KEY,
-    model_name="openai/gpt-oss-120b"
+    model_name="llama3-8b-8192"
 )
 
-
-# =========================
-# Prompt
-# =========================
 prompt = ChatPromptTemplate.from_template("""
-You are a health insurance advisor.
-
 Answer ONLY from context.
-
-Format:
-covered:
-how:
-why:
-citation:
 
 Context:
 {context}
@@ -66,30 +41,14 @@ Question:
 {input}
 """)
 
-
-# =========================
-# Chain
-# =========================
 doc_chain = create_stuff_documents_chain(llm, prompt)
 qa_chain = create_retrieval_chain(retriever, doc_chain)
-print("hello")
 
-
-# =========================
-# Function
-# =========================
 def ask(query):
-    response = qa_chain.invoke({"input": query})
-    return response["answer"]
+    return qa_chain.invoke({"input": query})["answer"]
 
+demo = gr.Interface(fn=ask, inputs="text", outputs="text")
 
-# =========================
-# UI
-# =========================
-demo = gr.Interface(
-    fn=ask,
-    inputs=gr.Textbox(label="Ask about insurance"),
-    outputs=gr.Textbox(label="Answer"),
-    title="Health Insurance RAG Assistant"
-)
-demo.launch(ssr_mode=False)
+# 🔥 RENDER FIX
+port = int(os.environ.get("PORT", 7860))
+demo.launch(server_name="0.0.0.0", server_port=port)

@@ -7,3 +7,4 @@ faiss-cpu
 sentence-transformers 
 pypdf
 gradio
+python==3.10

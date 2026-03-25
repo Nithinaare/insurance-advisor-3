@@ -9,7 +9,7 @@ from langchain.chains import create_retrieval_chain
 from langchain.chains.combine_documents import create_stuff_documents_chain
 from langchain_core.prompts import ChatPromptTemplate
 
-
+print("0")
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # 🔥 lightweight embedding
@@ -43,15 +43,16 @@ Question:
 
 doc_chain = create_stuff_documents_chain(llm, prompt)
 qa_chain = create_retrieval_chain(retriever, doc_chain)
-
+print("1")
 def ask(query):
     return qa_chain.invoke({"input": query})["answer"]
-
+print("2")
 demo = gr.Interface(fn=ask, inputs="text", outputs="text")
 
 # 🔥 RENDER FIX
+print("3")
 port = int(os.environ.get("PORT", 7860))
-
+print("4")
 demo.launch(
     server_name="0.0.0.0",
     server_port=port
